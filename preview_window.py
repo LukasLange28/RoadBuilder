@@ -1,11 +1,13 @@
-import os
+import os, sys
 import shutil
+import time
 from PyQt5.QtWidgets import QWidget, QMessageBox, QShortcut, QGraphicsScene, QGraphicsView, QMainWindow
 from PyQt5.QtGui import QFont, QTransform, QKeySequence
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5 import QtCore
 
 from track_generator.generator import generate_track
+
 
 from xml_writer_reader import xml_writer
 from get_road_element_dict import get_int
@@ -22,7 +24,11 @@ def xml_preview(parent_window):
     svg_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
     try:
         xml_writer(parent_window.road, xml_path, parent_window.factor)
+        start = time.time()
         generate_track([xml_path], svg_path, False, False)
+        end = time.time()
+        duration = end - start
+        print(duration)
         parent_window.preview_window = PreviewWindow(os.path.join(svg_path, 'temp', 'temp.svg'))
         parent_window.preview_window.show()
     except Exception as e:
@@ -120,7 +126,7 @@ class PreviewWindow(QMainWindow):
         Is called from mouse wheel or plus button
         """
         scale_tr = QTransform()
-        scale_tr.scale(self.factor, self.factor)
+        scale_tr.scale(1.5, 1.5)
         tr = self.view.transform() * scale_tr
         self.view.setTransform(tr)
 
@@ -130,7 +136,7 @@ class PreviewWindow(QMainWindow):
         Is called from mouse wheel os minus button
         """
         scale_tr = QTransform()
-        scale_tr.scale(self.factor, self.factor)
+        scale_tr.scale(1.5, 1.5)
         scale_inverted, invertible = scale_tr.inverted()
         if invertible:
             tr = self.view.transform() * scale_inverted

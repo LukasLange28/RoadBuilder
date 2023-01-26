@@ -6,19 +6,22 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QLin
 from PyQt5.QtGui import QPainter, QPen, QFont, QPainterPath, QPolygonF, QTransform, QKeySequence
 from PyQt5.QtCore import Qt, QPoint, QLineF
 
+if  not '/home/id305564/Schreibtisch/U/track_generator' in sys.path:
+    sys.path.append('/home/id305564/Schreibtisch/U/track_generator')
 
-import parking_area, traffic_island, intersection, select_line_style
+import clothoids_window, parking_area, traffic_island, intersection, select_line_style
 from get_road_element_dict import *
 from python_writer_reader import python_reader, python_writer
 from xml_writer_reader import xml_writer, xml_reader
 from preview_window import xml_preview
+
+
 
 class Window(QMainWindow):
     
     def __init__(self):
         
         super().__init__()       
-        
 
         self.move_window = QPoint(-10000,-10000)
         
@@ -139,7 +142,7 @@ class Window(QMainWindow):
         self.track_generator_form_group_box.move(screen_width-button_width-20, 100)
         
         self.line_length = QLineEdit(self)
-        self.line_length.move(screen_width-button_width-20, 200)
+        self.line_length.move(screen_width-button_width-20, 230)
         self.line_length.setToolTip('Länge des Abschnitts')
         self.line_length.setPlaceholderText('Länge')
         self.line_length.setFixedWidth(button_width)
@@ -147,63 +150,69 @@ class Window(QMainWindow):
         
         self.line_button = QPushButton('Gerade einfügen', self)
         self.line_button.setToolTip('Es wird eine Gerade eingefügt')
-        self.line_button.move(screen_width-button_width-20, 230)
+        self.line_button.move(screen_width-button_width-20, 260)
         self.line_button.clicked.connect(self.line_button_clicked)
         self.line_button.setFixedWidth(button_width)
         
         self.zebra_button = QPushButton('Zebrasteifen einfügen', self)
         self.zebra_button.setToolTip('Es wird eine Gerade mit Zebrastreifen eingefügt')
-        self.zebra_button.move(screen_width-button_width-20, 260)
+        self.zebra_button.move(screen_width-button_width-20, 290)
         self.zebra_button.clicked.connect(self.zebra_button_clicked)
         self.zebra_button.setFixedWidth(button_width)
         
         self.blocked_area_button = QPushButton('Hindernis einfügen', self)
         self.blocked_area_button.setToolTip('Es wird eine Gerade mit Hindernis eingefügt')
-        self.blocked_area_button.move(screen_width-button_width-20, 290)
+        self.blocked_area_button.move(screen_width-button_width-20, 320)
         self.blocked_area_button.clicked.connect(self.blocked_area_button_clicked)
         self.blocked_area_button.setFixedWidth(button_width)
         
         self.radius = QLineEdit(self)
         self.radius.setToolTip('Radius der Kurve')
         self.radius.setPlaceholderText('Radius')
-        self.radius.move(screen_width-button_width-20, 360)
+        self.radius.move(screen_width-button_width-20, 380)
         self.radius.setFixedWidth(button_width)
         self.radius.setValidator(QtGui.QDoubleValidator())
         
         self.arc_length = QLineEdit(self)
         self.arc_length.setToolTip('Winkel der Kurve')
         self.arc_length.setPlaceholderText('Winkel')
-        self.arc_length.move(screen_width-button_width-20, 390)
+        self.arc_length.move(screen_width-button_width-20, 410)
         self.arc_length.setFixedWidth(button_width)
         self.arc_length.setValidator(QtGui.QIntValidator())
         
         self.right_curve_button = QPushButton('Rechts Kurve einfügen', self)
         self.right_curve_button.setToolTip('Es wird eine Rechtskurve eingefügt')
-        self.right_curve_button.move(screen_width-button_width-20, 420)
+        self.right_curve_button.move(screen_width-button_width-20, 440)
         self.right_curve_button.clicked.connect(self.right_curve_button_clicked)
         self.right_curve_button.setFixedWidth(button_width)
         
         self.left_curve_button = QPushButton('Links Kurve einfügen', self)
         self.left_curve_button.setToolTip('Es wird eine Linkskurve eingefügt')
-        self.left_curve_button.move(screen_width-button_width-20, 450)
+        self.left_curve_button.move(screen_width-button_width-20, 470)
         self.left_curve_button.clicked.connect(self.left_curve_button_clicked)
         self.left_curve_button.setFixedWidth(button_width)
+        
+        self.clothoid_button = QPushButton('Klothoid einfügen', self)
+        self.clothoid_button.setToolTip('Es wird ein Klothoid eingefügt')
+        self.clothoid_button.move(screen_width-button_width-20, 500)
+        self.clothoid_button.clicked.connect(self.clothoid_button_clicked)
+        self.clothoid_button.setFixedWidth(button_width)
 
         self.parking_area_button = QPushButton('Parkbereich einfügen', self)
         self.parking_area_button.setToolTip('Es wird ein Parkbereich eingefügt')
-        self.parking_area_button.move(screen_width-button_width-20, 520)
+        self.parking_area_button.move(screen_width-button_width-20, 560)
         self.parking_area_button.clicked.connect(self.parking_area_button_clicked)
         self.parking_area_button.setFixedWidth(button_width)
         
         self.traffic_island_button = QPushButton('Fußgängerinsel einfügen', self)
         self.traffic_island_button.setToolTip('Es wird eine Fußgängerinsel eingefügt')
-        self.traffic_island_button.move(screen_width-button_width-20, 550)
+        self.traffic_island_button.move(screen_width-button_width-20, 590)
         self.traffic_island_button.clicked.connect(self.traffic_island_button_clicked)
         self.traffic_island_button.setFixedWidth(button_width)
         
         self.intersection_button = QPushButton('Kreuzung einfügen', self)
         self.intersection_button.setToolTip('Es wird eine Kreuzung eingefügt')
-        self.intersection_button.move(screen_width-button_width-20, 580)
+        self.intersection_button.move(screen_width-button_width-20, 620)
         self.intersection_button.clicked.connect(self.intersection_button_clicked)
         self.intersection_button.setFixedWidth(button_width)
         
@@ -230,10 +239,11 @@ class Window(QMainWindow):
         self.arc_length.move(window_width-button_width-20, 410)
         self.right_curve_button.move(window_width-button_width-20, 440)
         self.left_curve_button.move(window_width-button_width-20, 470)
+        self.clothoid_button.move(window_width-button_width-20, 500)
 
-        self.parking_area_button.move(window_width-button_width-20, 530)
-        self.traffic_island_button.move(window_width-button_width-20, 560)
-        self.intersection_button.move(window_width-button_width-20, 590)
+        self.parking_area_button.move(window_width-button_width-20, 560)
+        self.traffic_island_button.move(window_width-button_width-20, 590)
+        self.intersection_button.move(window_width-button_width-20, 620)
 
     def save_python_button_clicked(self):
         """
@@ -349,12 +359,19 @@ class Window(QMainWindow):
             if float(self.radius.text()) > 0 and float(self.arc_length.text()) > 0:
                 self.append_road_element(get_left_curve_dict(self.road[-1]['end'] , self.road[-1]['endDirection'], float(self.radius.text()), float(self.arc_length.text()), self.factor))
     
+    def clothoid_button_clicked(self):
+        """
+        Open the clothoid window.
+        """
+        self.clothoid_window = clothoids_window.ClothoidWindow(self)
+        self.clothoid_window.show()
+
     def parking_area_button_clicked(self):
         """
         Open the parking area window.
         """
-        self.parking_area_aindow = parking_area.ParkingAreaWindow(self)
-        self.parking_area_aindow.show()
+        self.parking_area_window = parking_area.ParkingAreaWindow(self)
+        self.parking_area_window.show()
     
     def traffic_island_button_clicked(self):
         """
@@ -413,6 +430,8 @@ class Window(QMainWindow):
                     self.road[idx] = get_traffic_island_dict(prev_element['end'], prev_element['endDirection'], element['zebraLength'], element['islandWidth'], element['curveAreaLength'], element['curvature'], self.factor)
                 elif element['name'] == 'intersection':
                     self.road[idx] = get_intersection_dict(prev_element['end'], prev_element['endDirection'], element['text'], element['length'], self.open_intersections, self.factor)
+                elif element['name'] == 'clothoid':
+                    self.road[idx] = get_clothoid_dict(prev_element['end'], prev_element['endDirection'], element['a'], element['angle'], element['angleOffset'], element['type'], element['points'])
                 self.road[idx]['end'], self.road[idx]['endDirection'], self.road[idx]['skip_intersection'], self.road[idx]['intersection_radius'] = check_for_intersection_connection(self.road[idx]['end'], self.road[idx]['endDirection'], self.open_intersections)
                 self.road[idx].update({'rightLine': element['rightLine'], 'middleLine': element['middleLine'], 'leftLine': element['leftLine']})
     
@@ -430,6 +449,8 @@ class Window(QMainWindow):
             self.list_widget.addItem('Rechts Kurve')
         elif name == 'circleLeft':
             self.list_widget.addItem('Links Kurve')
+        elif name == 'clothoid':
+            self.list_widget.addItem('Klothoid')
         elif name == 'parkingArea':
             self.list_widget.addItem('Parkplatz')
         elif name == 'trafficIsland':
@@ -458,7 +479,7 @@ class Window(QMainWindow):
         """
         Update the end coordinates and direction
         """
-        self.end_label.setText(f'x: {self.road[-1]["end"][0]/self.factor-100}, y: {self.road[-1]["end"][1]/self.factor-100}')
+        self.end_label.setText(f'x: {round(self.road[-1]["end"][0]/self.factor-100, 2)}, y: {round(self.road[-1]["end"][1]/self.factor-100, 2)}')
         self.direction_label.setText(f'{self.road[-1]["endDirection"]%360}°')       
 
     def wheelEvent(self, event):
@@ -595,6 +616,18 @@ class PaintRoad(QWidget):
                 arc_length = element['arcLength']*16
                 painter.drawArc(start_x, start_y, width, height, a, arc_length)
             
+            if element['name'] == 'clothoid':
+                path = QPainterPath()
+                polygon = []
+                start = element['start']
+                radian = math.radians(element['direction'])
+                #[get_int(d[0]*math.cos(radian)+d[1]*math.sin(radian)), get_int(d[0]*math.sin(radian)-d[1]*math.cos(radian))]
+                p = [QPoint(get_int(i[0]*math.cos(radian) + i[1]*math.sin(radian))+start[0], get_int(-i[0]*math.sin(radian) + i[1]*math.cos(radian))+start[1]) for i in element['points']]
+                #p = [QPoint((i[0]+start[0]), (i[1]+start[1])) for i in element['points']]
+                polygon = QPolygonF(p)
+                path.addPolygon(polygon)
+                painter.drawPath(path)
+
             if element['name'] == 'trafficIsland':
                 points = []
                 polygon = []

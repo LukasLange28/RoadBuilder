@@ -176,6 +176,22 @@ def get_traffic_island_dict(start, direction, zebra_length, island_width, curve_
     dict['end'] = [get_int(start[0] + length * math.cos(angle)), get_int(start[1] - length * math.sin(angle))]
     return dict
 
+def get_clothoid_dict(start, direction, a, angle, angle_offset, type, points):
+    dict = {}
+    dict['name'] = 'clothoid'
+    dict['start'] = start
+    dict['direction'] = direction
+    dict['a'] = a
+    dict['angle'] = angle
+    dict['angleOffset'] = angle_offset
+    dict['type'] = type
+    dict['points'] = points
+    radian = math.radians(direction)
+    #get_int(points[-1][0]*math.cos(radian) + points[-1][1]*math.sin(radian))+start[0], get_int(-points[-1][0]*math.sin(radian) + points[-1][1]*math.cos(radian))+start[1]
+    dict['end'] = [get_int(points[-1][0]*math.cos(radian) + points[-1][1]*math.sin(radian))+start[0], get_int(-points[-1][0]*math.sin(radian) + points[-1][1]*math.cos(radian))+start[1]]
+    dict['endDirection'] = direction + angle
+    return dict
+
 def check_for_intersection_connection(end, direction, open_intersections):
     '''
     Checks if the last roadsection is connected to a open intersection.
@@ -198,3 +214,18 @@ def get_int(number):
     Return the rounded number
     """
     return int(number + 0.5 if number >= 0 else number -0.5)
+
+def get_faculty(number):
+    """
+    Return the faculty of number
+    """
+    faculty = 1
+    for i in range(1,number):
+        faculty *= i
+    return faculty
+
+def move_point(point, postponmet):
+    return [point[0] + postponmet[0], point[1] + postponmet[1]]
+
+def rotate_point(point, radian):
+    return [get_int(point[0]*math.cos(radian)+point[1]*math.sin(radian)), get_int(-point[0]*math.sin(radian)+point[1]*math.cos(radian))]

@@ -31,7 +31,7 @@ def xml_writer(road, file_name, factor):
         elif element['name'] == 'blockedArea':
             ET.SubElement(segments, 'BlockedArea', {'length': str(element['length'])})
         elif element['name'] == 'trafficIsland':
-            ET.SubElement(segments, 'TrafficIsland', {'island_width': str(element['islandWidth']), 'zebra_length': str(element['zebraLength']), 'curve_area_length': str(element['curveAreaLength']), 'curvature': str(element['curvature'])})
+            ET.SubElement(segments, 'TrafficIsland', {'island_width': str(element['islandWidth']), 'crosswalk_length': str(element['zebraLength']), 'curve_segment_length': str(element['curveAreaLength']), 'curvature': str(element['curvature'])})
         elif element['name'] == 'intersection':
             ET.SubElement(segments, 'Intersection', {'length': str(element['length']), 'direction': element['text'].lower()})
         elif element['name'] == 'parkingArea':
@@ -46,6 +46,9 @@ def xml_writer(road, file_name, factor):
                 parking_lot = ET.SubElement(left_lots, 'ParkingLot', {'start': str(lot['start']), 'depth': str(parking_spot_size[lot['type']][1]), 'opening_ending_angle': '45'})#, 'lot_length': str(parkingSpotSize[lot['type']][0])})
                 for spot in lot['spots']:
                     ET.SubElement(parking_lot, 'Spot', {'type': spot.lower(), 'length': str(parking_spot_size[lot['type']][0])})
+        elif element['name'] == 'clothoid':
+            direction = 'right' if element['angle'] < 0 else 'left'
+            ET.SubElement(segments, 'Clothoid', {'a': str(element['a']), 'angle': str(abs(element['angle'])), 'angle_offset': str(element['angleOffset']), 'direction': direction, 'type': str(element['type'])})
         if element.get('skip_intersection'):
             ET.SubElement(segments, 'Gap', {'direction': element['skip_intersection'], 'length': str(element['intersection_radius']*2)})
     
@@ -76,6 +79,11 @@ def get_xml_size(road, factor):
         elif element['name'] == 'parkingArea':
             points.append([get_int(element['start'][0] + 1/factor * math.cos(math.radians(element['direction']))), get_int(element['start'][1] - 1/factor * math.sin(math.radians(element['direction'])))])
             points.append([get_int(element['end'][0] - 1/factor * math.cos(math.radians(element['direction']))), get_int(element['end'][1] + 1/factor * math.sin(math.radians(element['direction'])))])
+        elif element['name'] == 'clothoid':
+            points.append(element['start'])
+            invert = 1 if element['angle'] < 0 else -1
+            new_point = rotate_point([element['a']*3, element['a']*3*invert], math.radians(element['direction']))
+            points.append([element['start'][0] + new_point[0], element['start'][1] + new_point[1]])
 
         for point in points:
             # -10000 to get meter
