@@ -141,6 +141,8 @@ def python_writer(road, file_name, close_loop):
                 file.write(f'\t\t],\n')
                 file.write('\t)\n')
                 file.write(')\n')
+            elif element['name'] == 'clothoid':
+                raise Exception('Es können keine Klothoiden im Python Format gespeichert werden')
             if element.get('skip_intersection'):
                 if element['skip_intersection'] == 'right':
                     file.write('road.append(\n')

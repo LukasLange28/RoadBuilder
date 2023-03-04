@@ -1,0 +1,4 @@
+PyQt5
+track_generator
+twine
+wheel

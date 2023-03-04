@@ -176,7 +176,7 @@ def get_traffic_island_dict(start, direction, zebra_length, island_width, curve_
     dict['end'] = [get_int(start[0] + length * math.cos(angle)), get_int(start[1] - length * math.sin(angle))]
     return dict
 
-def get_clothoid_dict(start, direction, a, angle, angle_offset, type, points):
+def get_clothoid_dict(start, direction, a, angle, angle_offset, type, end, localDirection):
     dict = {}
     dict['name'] = 'clothoid'
     dict['start'] = start
@@ -185,10 +185,10 @@ def get_clothoid_dict(start, direction, a, angle, angle_offset, type, points):
     dict['angle'] = angle
     dict['angleOffset'] = angle_offset
     dict['type'] = type
-    dict['points'] = points
+    dict['localEnd'] = end
+    dict['localDirection'] = localDirection
     radian = math.radians(direction)
-    #get_int(points[-1][0]*math.cos(radian) + points[-1][1]*math.sin(radian))+start[0], get_int(-points[-1][0]*math.sin(radian) + points[-1][1]*math.cos(radian))+start[1]
-    dict['end'] = [get_int(points[-1][0]*math.cos(radian) + points[-1][1]*math.sin(radian))+start[0], get_int(-points[-1][0]*math.sin(radian) + points[-1][1]*math.cos(radian))+start[1]]
+    dict['end'] = [get_int(end[0]*math.cos(radian) + end[1]*math.sin(radian))+start[0], get_int(-end[0]*math.sin(radian) + end[1]*math.cos(radian))+start[1]]
     dict['endDirection'] = direction + angle
     return dict
 

@@ -1,8 +1,10 @@
+from clothoids_window import ClothoidWindow
 from xml.etree import cElementTree as ET, ElementTree
 from xml.etree import ElementTree
 from xml.dom import minidom
 
 from get_road_element_dict import *
+from clothoids_window import get_clothoid
 
 def xml_writer(road, file_name, factor):
     """
@@ -47,8 +49,7 @@ def xml_writer(road, file_name, factor):
                 for spot in lot['spots']:
                     ET.SubElement(parking_lot, 'Spot', {'type': spot.lower(), 'length': str(parking_spot_size[lot['type']][0])})
         elif element['name'] == 'clothoid':
-            direction = 'right' if element['angle'] < 0 else 'left'
-            ET.SubElement(segments, 'Clothoid', {'a': str(element['a']), 'angle': str(abs(element['angle'])), 'angle_offset': str(element['angleOffset']), 'direction': direction, 'type': str(element['type'])})
+            ET.SubElement(segments, 'Clothoid', {'a': str(element['a']), 'angle': str(abs(element['angle'])), 'angle_offset': str(element['angleOffset']), 'direction': str(element['localDirection']), 'type': str(element['type'])})
         if element.get('skip_intersection'):
             ET.SubElement(segments, 'Gap', {'direction': element['skip_intersection'], 'length': str(element['intersection_radius']*2)})
     
@@ -74,27 +75,27 @@ def get_xml_size(road, factor):
             points.append([get_int(element['start'][0] + element['islandWidth'] * math.cos(math.radians(element['direction']))), get_int(element['start'][1] - element['islandWidth'] * math.sin(math.radians(element['direction'])))])
             points.append([get_int(element['end'][0] - element['islandWidth'] * math.cos(math.radians(element['direction']))), get_int(element['end'][1] + element['islandWidth'] * math.sin(math.radians(element['direction'])))])
         elif element['name'] == 'intersection':
-            points.append([get_int(element['start'][0] + element['length'] * math.cos(math.radians(element['direction']))), get_int(element['start'][1] - element['length'] * math.sin(math.radians(element['direction'])))])
-            points.append([get_int(element['end'][0] - element['length'] * math.cos(math.radians(element['direction']))), get_int(element['end'][1] + element['length'] * math.sin(math.radians(element['direction'])))])
+            points.append([sum(i) for i in zip(element['start'], rotate_point([element['length']* factor, element['length']* factor/2], math.radians(element['direction'])))])
+            points.append([sum(i) for i in zip(element['start'], rotate_point([element['length']* factor, -element['length']* factor/2], math.radians(element['direction'])))])
         elif element['name'] == 'parkingArea':
             points.append([get_int(element['start'][0] + 1/factor * math.cos(math.radians(element['direction']))), get_int(element['start'][1] - 1/factor * math.sin(math.radians(element['direction'])))])
             points.append([get_int(element['end'][0] - 1/factor * math.cos(math.radians(element['direction']))), get_int(element['end'][1] + 1/factor * math.sin(math.radians(element['direction'])))])
         elif element['name'] == 'clothoid':
             points.append(element['start'])
             invert = 1 if element['angle'] < 0 else -1
-            new_point = rotate_point([element['a']*3, element['a']*3*invert], math.radians(element['direction']))
+            new_point = rotate_point([element['a']*1.5*factor, element['a']*1.5*factor*invert], math.radians(element['direction']))
             points.append([element['start'][0] + new_point[0], element['start'][1] + new_point[1]])
+            points.append([element['start'][0] - new_point[0], element['start'][1] - new_point[1]])
 
         for point in points:
-            # -10000 to get meter
-            if (point[0]-10000)/factor > coordinates['x']:
-                coordinates['x'] = (point[0]-10000)/factor
-            elif (point[0]-10000)/factor < coordinates['-x']:
-                coordinates['-x'] = (point[0]-10000)/factor
-            if (point[1]-10000)/factor > coordinates['y']:
-                coordinates['y'] = (point[1]-10000)/factor
-            elif (point[1]-10000)/factor < coordinates['-y']:
-                coordinates['-y'] = (point[1]-10000)/factor
+            if (point[0])/factor > coordinates['x']:
+                coordinates['x'] = (point[0])/factor
+            elif (point[0])/factor < coordinates['-x']:
+                coordinates['-x'] = (point[0])/factor
+            if (point[1])/factor > coordinates['y']:
+                coordinates['y'] = (point[1])/factor
+            elif (point[1])/factor < coordinates['-y']:
+                coordinates['-y'] = (point[1])/factor
         
     size = [-coordinates['-x']+coordinates['x']+2, -coordinates['-y']+coordinates['y']+2]
     start = [-coordinates['-x']+1, coordinates['y']+1]
@@ -145,12 +146,20 @@ def xml_reader(file_name, parent_window):
             right = [{'start': float(parkSpot.get('start')), 'number': len(parkSpot.findall('Spot')), 'spots': [spot.get('type').upper() for spot in parkSpot.findall('Spot')], 'type': 1 if float(parkSpot.get('depth')) >= 0.5 else 0} for parkSpot in element.find('RightLots').findall('ParkingLot')]
             length = float(element.get('length')) if element.get('length') else 5
             dict = get_parking_area_dict(parent_window.road[-1]['end'], parent_window.road[-1]['endDirection'], length, right, left, parent_window.factor)
-        
+        elif element.tag == 'Clothoid':
+            a = float(element.get('a'))
+            angle = float(element.get('angle'))
+            angle_offset = float(element.get('angle_offset'))
+            type = element.get('type')
+            direction = 1 if element.get('direction') == 'right' else -1
+            end = get_clothoid(a, angle, angle_offset, direction, type)[-1]
+            dict = get_clothoid_dict(parent_window.road[-1]['end'], parent_window.road[-1]['endDirection'], a, angle, angle_offset, type, end, element.get('direction'))
+
         # Road line are not given in the xml file
         dict['leftLine'] = 'solid'
         dict['middleLine'] = 'dashed'
         dict['rightLine'] = 'solid'
 
         parent_window.append_road_element(dict)
-    parent_window.reconnect_road(0)
+    parent_window.reconnect_road()
     

@@ -30,21 +30,22 @@ class ClothoidWindow(QMainWindow):
         self.move_window = QPoint(-10000,-10000)
         self.start = [10000, 10000]
 
-        self.scene = QGraphicsScene(self)
-        self.view = QGraphicsView(self.scene)
-        self.paint_road = PaintRoad(self.dict, self.move_window, self.factor, self)
-        self.paint_road.setFixedSize(20000, 20000)
-        self.paint_road.move(-10000,-10000)
-        self.scene.addWidget(self.paint_road)
+        scene = QGraphicsScene(self)
+        self.view = QGraphicsView(scene)
+        paint_clothoid = PaintClothoid(self.dict, self.move_window, self.factor, self)
+        paint_clothoid.setFixedSize(20000, 20000)
+        paint_clothoid.move(-10000,-10000)
+        scene.addWidget(paint_clothoid)
         self.setCentralWidget(self.view)
 
         # creates shortcuts
         QShortcut(QKeySequence(QtCore.Qt.Key_Minus), self.view, context=QtCore.Qt.WidgetShortcut, activated=self.zoom_out)
         QShortcut(QKeySequence(QtCore.Qt.Key_Plus), self.view, context=QtCore.Qt.WidgetShortcut, activated=self.zoom_in)
         
+        # Widgets for tab_a
         self.a = QLineEdit(self)
         self.a.setToolTip('Beeinflusst die Größe der Klothoide')
-        self.a.setText('100')
+        self.a.setText('2')
         self.a.setPlaceholderText('A')
         self.a.setFixedWidth(120)
         self.a.setValidator(QtGui.QDoubleValidator())
@@ -75,9 +76,10 @@ class ClothoidWindow(QMainWindow):
         form_a.addRow(QLabel('Art:'), self.type_a)
         form_a.setVerticalSpacing(0)
         
+        # Widgets for tab_end_radius
         self.end_radius = QLineEdit(self)
         self.end_radius.setToolTip('Radius am Ende der Kurve')
-        self.end_radius.setText('0.5')
+        self.end_radius.setText('1')
         self.end_radius.setPlaceholderText('Radius')
         self.end_radius.setFixedWidth(120)
         self.end_radius.setValidator(QtGui.QDoubleValidator())
@@ -108,9 +110,10 @@ class ClothoidWindow(QMainWindow):
         form_end_radius.addRow(QLabel('Art:'), self.type_end_radius)
         form_end_radius.setVerticalSpacing(0)
         
+        # Widgets for tab_two_radii
         self.first_radius = QLineEdit(self)
         self.first_radius.setToolTip('Radius bei Kurvenstart')
-        self.first_radius.setText('1')
+        self.first_radius.setText('2')
         self.first_radius.setPlaceholderText('Anfangsradius')
         self.first_radius.setFixedWidth(120)
         self.first_radius.setValidator(QtGui.QDoubleValidator())
@@ -118,7 +121,7 @@ class ClothoidWindow(QMainWindow):
 
         self.second_radius = QLineEdit(self)
         self.second_radius.setToolTip('Radius bei Kurvenende')
-        self.second_radius.setText('0.5')
+        self.second_radius.setText('1')
         self.second_radius.setPlaceholderText('Anfangsradius')
         self.second_radius.setFixedWidth(120)
         self.second_radius.setValidator(QtGui.QDoubleValidator())
@@ -137,43 +140,46 @@ class ClothoidWindow(QMainWindow):
         self.direction_two_radii.setFixedWidth(120)
         self.direction_two_radii.activated[str].connect(self.update_two_radii_clothoid)
 
-        self.warning_Label = QLabel(self)
-        self.warning_Label.setFixedWidth(600)
-        self.warning_Label.setStyleSheet('color: red')
-        self.warning_Label.move(300,0)
-
         form_two_radii = QFormLayout()
         form_two_radii.addRow(QLabel('Anfagsradius:'), self.first_radius)
         form_two_radii.addRow(QLabel('Endradius:'), self.second_radius)
         form_two_radii.addRow(QLabel('Winkel:'), self.arc_length_two_radii)
         form_two_radii.addRow(QLabel('Richtung:'), self.direction_two_radii)
-        #form_two_radii.addRow(self.warning_two_radii)
         form_two_radii.setVerticalSpacing(0)
         
+        # Box with tabs
         self.tabs = QTabWidget(self)
         self.tabs.resize(260, 180)
+        # Calls the function tab_handler() when a tab is clicked
+        self.tabs.currentChanged.connect(self.tab_handler)
+
         self.tab_a = QWidget()
         self.tab_end_radius = QWidget()
         self.tab_two_radii = QWidget()
 
-        self.tabs.addTab(self.tab_a, 'Mit A')
         self.tabs.addTab(self.tab_end_radius, 'Ein Radius')
         self.tabs.addTab(self.tab_two_radii, 'Zwei Radien')
-
-        self.tabs.currentChanged.connect(self.tab_handler)
+        self.tabs.addTab(self.tab_a, 'A')
 
         self.tab_a.setLayout(form_a)
         self.tab_end_radius.setLayout(form_end_radius)
         self.tab_two_radii.setLayout(form_two_radii)
 
+        # Label for coordinates
         self.end_label = QLabel(f'End Koordinate: x: {self.dict["end"][0]/self.factor}, y: {self.dict["end"][1]/self.factor}', self)
         self.end_label.move(0, 180)
         self.end_label.setFixedWidth(260)
 
-        self.finish_button = QPushButton('Fertig',self)
-        self.finish_button.clicked.connect(self.finish_button_clicked)
-        self.finish_button.move(0, 210)
-        self.finish_button.setFixedWidth(260)
+        finish_button = QPushButton('Fertig',self)
+        finish_button.clicked.connect(self.finish_button_clicked)
+        finish_button.move(0, 210)
+        finish_button.setFixedWidth(260)
+
+        # Label for warnings
+        self.warning_label = QLabel(self)
+        self.warning_label.setFixedWidth(600)
+        self.warning_label.setStyleSheet('color: red')
+        self.warning_label.move(300,0)
 
         self.update_a_clothoid()
 
@@ -200,159 +206,170 @@ class ClothoidWindow(QMainWindow):
             self.view.setTransform(tr)
     
     def finish_button_clicked(self):
+        """
+        Close the window and insert clothoid in to the road list
+        """
         self.hide() 
         if self.arc_length_a.text() and self.a.text():
-            self.parent_window.append_road_element(get_clothoid_dict(self.road[-1]['end'], self.road[-1]['endDirection'], self.dict['a'], self.dict['angle'], self.dict['angle_offset'], self.dict['type'], self.dict['points']))
-            self.parent_window.update()
+            self.parent_window.append_road_element(get_clothoid_dict(self.road[-1]['end'], self.road[-1]['endDirection'], self.dict['a'], self.dict['angle'], self.dict['angle_offset'], self.dict['type'], self.dict['end'], self.dict['localDirection']))
             del self
 
     def tab_handler(self):
-        index = self.tabs.currentIndex()
-        if index == 0:
+        """
+        Load the clothoid of the selected tab
+        """
+        tab = self.tabs.currentWidget()
+        if tab == self.tab_a:
             self.update_a_clothoid()
-        elif index == 1:
+        elif tab == self.tab_end_radius:
             self.update_end_radius_clothoid()
-        elif index == 2:
+        elif tab == self.tab_two_radii:
             self.update_two_radii_clothoid()
 
     def update_a_clothoid(self):
+        """
+        Update the clothoid with the "a" parameters
+        """
         if self.arc_length_a.text() and self.a.text():
             dict ={}
             dict['a'] = int(self.a.text())
             dict['angle_offset'] = 0
             dict['type'] = 'opend' if self.type_a.currentText() == 'Öffnend' else 'closing'
-            direction = 1 if self.direction_a.currentText() == 'Rechts' else -1
+            dict['localDirection'] = 'right' if self.direction_a.currentText() == 'Rechts' else 'left'
+            direction = 1 if dict['localDirection'] == 'right' else -1
             angle = float(self.arc_length_a.text())
+            if self.check_angle(angle):
+                return
             dict['angle'] = angle * direction * -1
-            #radian = math.radians(float(self.arc_length_a.text()))
-            dict['points'] = self.get_clothoid(dict['a'], angle, dict['angle_offset'], direction, dict['type'])
-            #arc_length = get_int(dict['a']*math.sqrt(2*radian))
-            #radian = radian * direction
-            #l = [i*2 for i in range(get_int(arc_length/2))]
-            #for i in l:
-            #    dict['points'].append(self.get_clothoid_point(dict['a'], i, direction))
-            #if dict['type'] == 'opend':
-            #    dict['points'] = self.get_inverted_points(dict['points'], radian)
+            dict['points'] = get_clothoid(dict['a'], angle, dict['angle_offset'], direction, dict['type'])
             dict['end'] = dict['points'][-1]
             
             self.dict = dict
             self.end_label.setText(f'End Koordinate: x: {self.dict["end"][0]/self.factor}, y: {self.dict["end"][1]/self.factor}')
 
     def update_end_radius_clothoid(self):
+        """
+        Update the clothoid with the "end radius" parameters
+        """
         if self.arc_length_end_radius.text() and self.end_radius.text():
             dict ={}
             dict['angle_offset'] = 0
-            dict['type'] = 'opend' if self.type_a.currentText() == 'Öffnend' else 'closing'
-            direction = 1 if self.direction_end_radius.currentText() == 'Rechts' else -1
+            dict['type'] = 'opend' if self.type_end_radius.currentText() == 'Öffnend' else 'closing'
+            dict['localDirection'] = 'right' if self.direction_end_radius.currentText() == 'Rechts' else 'left'
+            direction = 1 if dict['localDirection'] == 'right' else -1
             angle = float(self.arc_length_end_radius.text())
+            if self.check_angle(angle):
+                return
             dict['angle'] = angle * direction * -1
             radian = math.radians(float(self.arc_length_end_radius.text()))
-            end_radius = float(self.end_radius.text())*100
-            dict['a'] = end_radius * math.sqrt(2*radian)
-            #arc_length = get_int(dict['a']*math.sqrt(2*radian))
+            end_radius = float(self.end_radius.text())
+            dict['a'] = math.sqrt(end_radius**2 * 2*radian)
             radian = radian * direction
-            #l = [i*2 for i in range(get_int(arc_length/2))]
-            dict['points'] = self.get_clothoid(dict['a'], angle, dict['angle_offset'], direction, dict['type'])
-            #for i in l:
-            #    dict['points'].append(self.get_clothoid_point(dict['a'], i, direction))
-            #if dict['type'] == 'opend':
-            #    dict['points'] = self.get_inverted_points(dict['points'], radian)
+            dict['points'] = get_clothoid(dict['a'], angle, dict['angle_offset'], direction, dict['type'])
             dict['end'] = dict['points'][-1]
             
             self.dict = dict
             self.end_label.setText(f'End Koordinate: x: {self.dict["end"][0]/self.factor}, y: {self.dict["end"][1]/self.factor}')
 
     def update_two_radii_clothoid(self):
+        """
+        Update the clothoid with the "two radii" parameters
+        """
         if self.arc_length_two_radii.text() and self.second_radius.text() and self.first_radius:
-            start_radius = float(self.first_radius.text())*100
-            end_radius = float(self.second_radius.text())*100
+            start_radius = float(self.first_radius.text())
+            end_radius = float(self.second_radius.text())
             if end_radius/start_radius >= 0.8 and end_radius/start_radius <= 1.2:
-                self.warning_Label.setText('Das Verhälnis Endradius/Anfangsradius muss kleiner 0.9 oder größer 1.2 sein')
+                self.warning_label.setText('Das Verhälnis Endradius/Anfangsradius muss kleiner 0.9 oder größer 1.2 sein')
                 return
-            self.warning_Label.setText('')
+            self.warning_label.setText('')
             dict ={}
-            direction = 1 if self.direction_two_radii.currentText() == 'Rechts' else -1
+            dict['localDirection'] = 'right' if self.direction_two_radii.currentText() == 'Rechts' else 'left'
+            direction = 1 if dict['localDirection'] == 'right' else -1
             angle = float(self.arc_length_two_radii.text())
+            if self.check_angle(angle):
+                return
             dict['angle'] = angle * direction * -1
             radian = math.radians(float(self.arc_length_two_radii.text()))
-
             dict['type'] = 'closing'
             if start_radius < end_radius:
                 dict['type'] = 'opend'
                 start_radius, end_radius = end_radius, start_radius
-
             radian_end = radian/(1-end_radius**2/start_radius**2)
-            #radian_start = radian_end - radian
-            dict['angle_offset'] = math.degrees(radian_end)
-            #dict['points'] = []
-            
+            dict['angle_offset'] = math.degrees(radian_end - radian)
             dict['a'] = end_radius * math.sqrt(2*radian_end)
-            #arc_length_end = get_int(dict['a']*math.sqrt(2*radian_end))
-            #arc_length_start = get_int(dict['a']*math.sqrt(2*radian_start))
-
-            #radian = radian * direction
-            #l = [i*2 for i in range(get_int(arc_length_start/2), get_int(arc_length_end/2))]
-
-            #for i in l:
-            #    dict['points'].append(self.get_clothoid_point(dict['a'], i, direction))
-            #move = [dict['points'][0][0]*-1, dict['points'][0][1]*-1]
-            #for i, point in enumerate(dict['points']):
-            #    dict['points'][i] = rotate_point(move_point(point, move), radian_start*direction)
-            #if dict['type'] == 'opend':
-            #    dict['points'] = self.get_inverted_points(dict['points'], radian)
-            dict['points'] = self.get_clothoid(dict['a'], angle, dict['angle_offset'], direction, dict['type'])
+            dict['points'] = get_clothoid(dict['a'], angle, dict['angle_offset'], direction, dict['type'])
             dict['end'] = dict['points'][-1]
             
             self.dict = dict
             self.end_label.setText(f'End Koordinate: x: {self.dict["end"][0]/self.factor}, y: {self.dict["end"][1]/self.factor}')
+    
+    def check_angle(self, angle):
+        """
+        Return True if the angle is between 0 and 360 
+        """
+        if angle <= 0 or angle > 360:
+            self.warning_label.setText('Der Winkel muss zwischen 0° und 360° sein')
+            return True
+        else:
+            self.warning_label.setText('')
+            return False
 
-    def get_clothoid(self, a, angle, angle_offset, direction, type):
-        points = []
-        arc_length_start = a*math.sqrt(2*math.radians(angle_offset))
-        arc_length_end = a*math.sqrt(2*math.radians(angle_offset + angle))
-        distance = 1
-        l = [i*distance for i in range(get_int(arc_length_start/distance), get_int(arc_length_end/distance)+1)]
-        for i in l:
-            points.append(self.get_clothoid_point(a, i, direction))
-        move = [points[0][0]*-1, points[0][1]*-1]
-        for i, point in enumerate(points):
-            points[i] = rotate_point(move_point(point, move), math.radians(angle_offset)*direction)
-        if type == 'opend':
-            points = self.get_inverted_points(points, math.radians(angle))
-        return points
+def get_clothoid(a, angle, angle_offset, direction, type):
+    """
+    Return a list with coordinats of the clothoid for the given parameters
+    """
+    points = []
+    arc_length_start = a*math.sqrt(2*math.radians(angle_offset))
+    arc_length_end = a*math.sqrt(2*math.radians(angle_offset + angle))
+    distance = 0.04
+    l = [i*distance for i in range(get_int(arc_length_start/distance), get_int(arc_length_end/distance)+1)]
+    for i in l:
+        points.append(get_clothoid_point(a, i, direction))
+    move = [points[0][0]*-1, points[0][1]*-1]
+    for i, point in enumerate(points):
+        points[i] = rotate_point(move_point(point, move), math.radians(angle_offset)*direction)
+    if type == 'opend':
+        points = get_inverted_points(points, math.radians(angle)*direction)
+    return points
 
-    def get_inverted_points(self, points, radian):
-        new_points = []
-        end = points[-1]
-        for point in points:
-            d = [(point[0]*-1+end[0]), (point[1]*-1+end[1])]
-            new_points.append([get_int(d[0]*math.cos(radian)+d[1]*math.sin(radian)), get_int(d[0]*math.sin(radian)-d[1]*math.cos(radian))])
-        return new_points[::-1]
+def get_inverted_points(points, radian):
+    """
+    Transform the given clothoid from closed to opend
+    """
+    new_points = []
+    end = points[-1]
+    for point in points:
+        d = [(point[0]*-1+end[0]), (point[1]*-1+end[1])]
+        new_points.append([get_int(d[0]*math.cos(radian)+d[1]*math.sin(radian)), get_int(d[0]*math.sin(radian)-d[1]*math.cos(radian))])
+    return new_points[::-1]
 
-    def get_clothoid_point(self, a, l, direction):
-        toggle = 1
-        x = 0
-        y = 0 
-        for loops in range(20):
-            x_ = toggle*l**(1+4*loops)/(a**(4*loops)*math.factorial(2*loops)*(1+4*loops)*2**(2*loops))
-            y_ = toggle*l**(3+4*loops)/(a**(2+4*loops)*math.factorial(1+2*loops)*(3+4*loops)*2**(1+2*loops))
-            x += x_
-            y += y_
-            toggle *= -1
-        return [get_int(x*math.sqrt(2*math.pi)) ,get_int(y*direction*math.sqrt(2*math.pi))]
+def get_clothoid_point(a, l, direction):
+    """
+    Calculate a clothoid point for the given parameters
+    """
+    toggle = 1
+    x = 0
+    y = 0 
+    for loops in range(20):
+        x_ = toggle*l**(1+4*loops)/(a**(4*loops)*math.factorial(2*loops)*(1+4*loops)*2**(2*loops))
+        y_ = toggle*l**(3+4*loops)/(a**(2+4*loops)*math.factorial(1+2*loops)*(3+4*loops)*2**(1+2*loops))
+        x += x_
+        y += y_
+        toggle *= -1
+    return [get_int(x*100) ,get_int(y*direction*100)]
 
-class PaintRoad(QWidget):
+
+class PaintClothoid(QWidget):
     def __init__(self, dict, move_window, factor, parent_window):
         super().__init__()
         self.dict = dict
         self.move_window = move_window
         self.factor = factor
         self.parent_window = parent_window
-
         self.container_widget = QWidget()
-
         self.mouse_pos = QPoint(0, 0)
         self.cursor_start = QPoint(0, 0)
+
     def wheelEvent(self, event):
         """
         Is called if mouse wheel is used

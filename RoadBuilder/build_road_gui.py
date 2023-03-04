@@ -1,10 +1,12 @@
-import sys
+import sys, os
 import math
+import shutil
 
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QLineEdit, QMessageBox, QFileDialog, QFormLayout, QGroupBox, QShortcut, QWidget
 from PyQt5.QtGui import QPainter, QPen, QFont, QPainterPath, QPolygonF, QTransform, QKeySequence
 from PyQt5.QtCore import Qt, QPoint, QLineF
+from PyQt5.QtSvg import QSvgWidget
 
 if  not '/home/id305564/Schreibtisch/U/track_generator' in sys.path:
     sys.path.append('/home/id305564/Schreibtisch/U/track_generator')
@@ -13,21 +15,19 @@ import clothoids_window, parking_area, traffic_island, intersection, select_line
 from get_road_element_dict import *
 from python_writer_reader import python_reader, python_writer
 from xml_writer_reader import xml_writer, xml_reader
-from preview_window import xml_preview
+from preview_window import SvgWidget
+from track_generator.generator import generate_track
 
-
-
-class Window(QMainWindow):
+class MainWindow(QMainWindow):
     
     def __init__(self):
         
         super().__init__()       
 
-        self.move_window = QPoint(-10000,-10000)
+        self.move_window = QPoint(0,0)
         
         # Road position
-        self.start = [10000, 10000]
-        self.end = [10000, 10000]
+        self.start = [0, 0]
         self.direction = 0
 
         # One meter = 100 pixel
@@ -37,7 +37,7 @@ class Window(QMainWindow):
         
         # road list
         self.road = []
-        self.road.append({'name': 'firstElement', 'start': self.start, 'end': self.end, 'direction': self.direction, 'endDirection': self.direction})
+        self.road.append({'name': 'firstElement', 'start': self.start, 'end': self.start, 'direction': self.direction, 'endDirection': self.direction})
         
         # list for open intersection ends
         self.open_intersections = []
@@ -45,17 +45,15 @@ class Window(QMainWindow):
         # creates widget for road presentation
         self.scene = QtWidgets.QGraphicsScene(self)
         self.view = QtWidgets.QGraphicsView(self.scene)
-        self.paint_road = PaintRoad(self.road, self.move_window, self.factor, self.parking_spot_size, self)
-        self.paint_road.setFixedSize(20000, 20000)
-        self.paint_road.move(-10000,-10000)
-        self.scene.addWidget(self.paint_road)
+        self.svg_widget = SvgWidget(self)
+        self.scene.addWidget(self.svg_widget)
         self.setCentralWidget(self.view)
 
         # creates shortcuts
         QShortcut(QKeySequence(QtCore.Qt.Key_Minus), self.view, context=QtCore.Qt.WidgetShortcut, activated=self.zoom_out)
         QShortcut(QKeySequence(QtCore.Qt.Key_Plus), self.view, context=QtCore.Qt.WidgetShortcut, activated=self.zoom_in)
 
-        self.setWindowTitle("RoadBuilder")
+        self.setWindowTitle('RoadBuilder')
         font = QFont('Roboto', 10)
         self.setFont(font)
 
@@ -64,19 +62,19 @@ class Window(QMainWindow):
         self.button_width = button_width
         
         # graphic elements
-        self.end_label = QLabel(f'x: {self.road[-1]["end"][0]/self.factor-100}, y: {self.road[-1]["end"][1]/self.factor-100}')
+        self.end_label = QLabel(f'x: {self.road[-1]["end"][0]/self.factor}, y: {self.road[-1]["end"][1]/self.factor}')
         self.direction_label = QLabel(f'{self.road[-1]["endDirection"]%360}°')
 
         form = QFormLayout()
         form.setVerticalSpacing(0)
-        form.addRow(QLabel('Start:'), QLabel(f'x: {self.start[0]/self.factor-100}, y: {self.start[1]/self.factor-100}'))
+        form.addRow(QLabel('Start:'), QLabel(f'x: {self.start[0]/self.factor}, y: {self.start[1]/self.factor}'))
         form.addRow(QLabel('Ende:'), self.end_label)
         form.addRow(QLabel('Richtung:'), self.direction_label)
 
-        self.form_group_box = QGroupBox(self)
-        self.form_group_box.setLayout(form)
-        self.form_group_box.setMinimumSize(200,100)
-        self.form_group_box.move(200, 0)
+        form_group_box = QGroupBox(self)
+        form_group_box.setLayout(form)
+        form_group_box.setMinimumSize(200,100)
+        form_group_box.move(200, 0)
 
         self.list_widget= QtWidgets.QListWidget(self)
         self.list_widget.resize(200, 300)
@@ -84,11 +82,11 @@ class Window(QMainWindow):
         self.list_widget.setToolTip('Hier erscheinen die Streckenabschnitte')
         self.list_widget.move(0, 20)
         
-        self.line_button = QPushButton('Streckenelement löschen', self)
-        self.line_button.setToolTip('Das ausgewählte Element wird gelöscht')
-        self.line_button.move(0, 320)
-        self.line_button.clicked.connect(self.delete_list_element)
-        self.line_button.setFixedWidth(200)
+        delete_button = QPushButton('Streckenelement löschen', self)
+        delete_button.setToolTip('Das ausgewählte Element wird gelöscht')
+        delete_button.move(0, 320)
+        delete_button.clicked.connect(self.delete_list_element)
+        delete_button.setFixedWidth(200)
         
         save_python_button = QPushButton('Speichern', self)
         save_python_button.setToolTip('Die Strecke wird als Python Datei gespeichert')
@@ -124,21 +122,14 @@ class Window(QMainWindow):
         load_xml_button.clicked.connect(self.load_xml_button_clicked)
         load_xml_button.setFixedWidth(75)
         
-        xml_preview_button = QPushButton('Vorschau', self)
-        xml_preview_button.setToolTip('Erzeugt eine Vorschau der SVG Datei')
-        xml_preview_button.move(screen_width-button_width-20, 70)
-        xml_preview_button.clicked.connect(self.xml_preview_button_clicked)
-        xml_preview_button.setFixedWidth(156)
-        
         track_generator_form = QFormLayout()
         track_generator_form.setVerticalSpacing(0)
         track_generator_form.addRow(QLabel('Track Generator:'))
         track_generator_form.addRow(save_xml_button, load_xml_button)
-        track_generator_form.addRow(xml_preview_button)
 
         self.track_generator_form_group_box = QGroupBox(self)
         self.track_generator_form_group_box.setLayout(track_generator_form)
-        self.track_generator_form_group_box.setMinimumSize(180, 100)
+        self.track_generator_form_group_box.setMinimumSize(180, 80)
         self.track_generator_form_group_box.move(screen_width-button_width-20, 100)
         
         self.line_length = QLineEdit(self)
@@ -192,7 +183,7 @@ class Window(QMainWindow):
         self.left_curve_button.clicked.connect(self.left_curve_button_clicked)
         self.left_curve_button.setFixedWidth(button_width)
         
-        self.clothoid_button = QPushButton('Klothoid einfügen', self)
+        self.clothoid_button = QPushButton('Klothoide einfügen', self)
         self.clothoid_button.setToolTip('Es wird ein Klothoid eingefügt')
         self.clothoid_button.move(screen_width-button_width-20, 500)
         self.clothoid_button.clicked.connect(self.clothoid_button_clicked)
@@ -216,7 +207,9 @@ class Window(QMainWindow):
         self.intersection_button.clicked.connect(self.intersection_button_clicked)
         self.intersection_button.setFixedWidth(button_width)
         
+        self.update_svg()
         self.showMaximized()
+        
     
     def resizeEvent(self, event):
         """
@@ -264,8 +257,12 @@ class Window(QMainWindow):
             mb = QMessageBox()
             ret = mb.question(self, '', 'Soll die Strecke geschlossen werden?', mb.Yes | mb.No)
             close_loop = True if ret == mb.Yes else False
-        python_writer(self.road, file, close_loop)
-        QMessageBox.about(self, 'Information', 'Die Strecke wurde gespeichert')
+        try:
+            python_writer(self.road, file, close_loop)
+            QMessageBox.about(self, 'Information', 'Die Strecke wurde gespeichert')
+        except Exception as e:
+            QMessageBox.about(self, 'Error', f'Die Strecke konnte nicht gespeichert werden.\nFehlermeldung:\n{e}')
+        
     
     def load_python_button_clicked(self):
         """
@@ -277,7 +274,6 @@ class Window(QMainWindow):
             return       
         try:
             python_reader(file, self)
-            self.paint_road.update()
         except Exception as e:
             QMessageBox.about(self, 'Error', f'Die Strecke konnte nicht geladen werden.\nFehlermeldung:\n{e}')
 
@@ -309,15 +305,15 @@ class Window(QMainWindow):
             return       
         try:
             xml_reader(file, self)
-            self.paint_road.update()
+            #self.paint_road.update()
         except Exception as e:
             QMessageBox.about(self, 'Error', f'Die Strecke konnte nicht geladen werden.\nFehlermeldung:\n{e}')
     
-    def xml_preview_button_clicked(self):
-        if not len(self.road) > 1:
-            QMessageBox.about(self, 'Warning', 'Es ist keine Strecke vorhanden!')
-            return
-        xml_preview(self)
+    #def xml_preview_button_clicked(self):
+    #    if not len(self.road) > 1:
+    #        QMessageBox.about(self, 'Warning', 'Es ist keine Strecke vorhanden!')
+    #        return
+    #    xml_preview(self)
     
     def line_button_clicked(self):
         """
@@ -398,13 +394,13 @@ class Window(QMainWindow):
             self.list_widget.takeItem(index)
             # Delete the element in self.road
             self.road.pop(index+1)
-            self.reconnect_road(index-1)
+            self.reconnect_road()
             self.update_coordinates()
-            self.paint_road.update()
+            self.update_svg()
         else:
             QMessageBox.about(self, 'Waring', 'Es ist kein Streckenelement ausgewählt.')
     
-    def reconnect_road(self, index):
+    def reconnect_road(self):
         """
         Rebuild the whole road.
         All points will be calculated again.
@@ -431,7 +427,7 @@ class Window(QMainWindow):
                 elif element['name'] == 'intersection':
                     self.road[idx] = get_intersection_dict(prev_element['end'], prev_element['endDirection'], element['text'], element['length'], self.open_intersections, self.factor)
                 elif element['name'] == 'clothoid':
-                    self.road[idx] = get_clothoid_dict(prev_element['end'], prev_element['endDirection'], element['a'], element['angle'], element['angleOffset'], element['type'], element['points'])
+                    self.road[idx] = get_clothoid_dict(prev_element['end'], prev_element['endDirection'], element['a'], element['angle'], element['angleOffset'], element['type'], element['localEnd'], element['localDirection'])
                 self.road[idx]['end'], self.road[idx]['endDirection'], self.road[idx]['skip_intersection'], self.road[idx]['intersection_radius'] = check_for_intersection_connection(self.road[idx]['end'], self.road[idx]['endDirection'], self.open_intersections)
                 self.road[idx].update({'rightLine': element['rightLine'], 'middleLine': element['middleLine'], 'leftLine': element['leftLine']})
     
@@ -474,12 +470,31 @@ class Window(QMainWindow):
         self.road.append(road_element)
         self.update_coordinates()
         self.insert_list_name(road_element['name'])
+        self.update_svg()
+    
+    def update_svg(self):
+        """
+        Generate xml file.
+        Generate svg file with track generator.
+        Open window with svg file.
+        Delete the generated files.
+        """
+        os.makedirs(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp'))
+        xml_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp', 'temp.xml')
+        svg_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
+        try:
+            xml_writer(self.road, xml_path, self.factor)
+            generate_track([xml_path], svg_path, False, False)
+            self.svg_widget.load_svg(os.path.join(svg_path, 'temp', 'temp.svg'))
+        except Exception as e:
+            QMessageBox.about(self, 'Error', f'Die Vorschau konnte nicht erstellt werden.\nFehlermeldung:\n{e}')
+        shutil.rmtree(svg_path)
     
     def update_coordinates(self):
         """
         Update the end coordinates and direction
         """
-        self.end_label.setText(f'x: {round(self.road[-1]["end"][0]/self.factor-100, 2)}, y: {round(self.road[-1]["end"][1]/self.factor-100, 2)}')
+        self.end_label.setText(f'x: {round(self.road[-1]["end"][0]/self.factor, 2)}, y: {-round(self.road[-1]["end"][1]/self.factor, 2)}')
         self.direction_label.setText(f'{self.road[-1]["endDirection"]%360}°')       
 
     def wheelEvent(self, event):
@@ -514,7 +529,7 @@ class Window(QMainWindow):
         if invertible:
             tr = self.view.transform() * scale_inverted
             self.view.setTransform(tr)
-
+'''
 class PaintRoad(QWidget):
     def __init__(self, road, move_window, factor, parking_spot_size, parent_window):
         super().__init__()
@@ -571,195 +586,8 @@ class PaintRoad(QWidget):
         self.parent_window.move_window.setX(self.parent_window.move_window.x() - (self.cursor_start - self.container_widget.cursor().pos()).x())
         self.parent_window.move_window.setY(self.parent_window.move_window.y() - (self.cursor_start - self.container_widget.cursor().pos()).y())
 
-    def paintEvent(self, event):
-        """
-        This function is called automaticly.
-        It paints the road.
-        """
-        road_width = 75
-        painter = QPainter(self)     
-        painter.begin(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setPen(QPen(Qt.gray, road_width, cap=Qt.FlatCap))
-        
-        for element in self.road:
-            if element['name'] == 'line':
-                painter.drawLine(element['start'][0] , element['start'][1] , element['end'][0] , element['end'][1] )
-            
-            if element['name'] == 'zebra':
-                painter.drawLine(element['start'][0] , element['start'][1] , element['end'][0] , element['end'][1] )
-                painter.setPen(QPen(Qt.white, road_width/10, cap=Qt.FlatCap))
-                angle = math.radians(element['direction'])
-                # Draw the white zebra lines
-                for x in range(5):
-                    painter.drawLine(get_int(element['start'][0]  + ((4*road_width - 2*road_width*x)/10)*math.sin(angle)),get_int( element['start'][1]  + ((4*road_width - 2*road_width*x)/10)*math.cos(angle)), get_int(element['end'][0] + ((4*road_width - 2*road_width*x)/10)*math.sin(angle)),get_int( element['end'][1] + ((4*road_width - 2*road_width*x)/10)*math.cos(angle)))
-                painter.setPen(QPen(Qt.gray, road_width, cap=Qt.FlatCap))
-            
-            if element['name'] == 'blockedArea':
-                painter.drawLine(element['start'][0] , element['start'][1] , element['end'][0] , element['end'][1])
-                painter.setPen(QPen(Qt.black, road_width/2, cap=Qt.FlatCap))
-                angle = math.radians(element['direction'])
-                # Draw the black obstacle
-                painter.drawLine(get_int(element['start'][0] + road_width/4*math.sin(angle)), get_int(element['start'][1] + road_width/4*math.cos(angle)), get_int(element['end'][0] + road_width/4*math.sin(angle)), get_int(element['end'][1] + road_width/4*math.cos(angle)))
-                painter.setPen(QPen(Qt.gray, road_width, cap=Qt.FlatCap))
-            
-            if (element['name'] == 'circleRight') | (element['name'] == 'circleLeft'):
-                # Draw the curves.
-                # The startpoints for drawArc are not the startpoints of the curve.
-                
-                height = get_int(element['radius'] *2 * self.factor)
-                width = get_int(element['radius'] *2 * self.factor)
-                start_x = element['start'][0]
-                start_y = element['start'][1]
-
-                a = element['a']
-                arc_length = element['arcLength']*16
-                painter.drawArc(start_x, start_y, width, height, a, arc_length)
-            
-            if element['name'] == 'clothoid':
-                path = QPainterPath()
-                polygon = []
-                start = element['start']
-                radian = math.radians(element['direction'])
-                #[get_int(d[0]*math.cos(radian)+d[1]*math.sin(radian)), get_int(d[0]*math.sin(radian)-d[1]*math.cos(radian))]
-                p = [QPoint(get_int(i[0]*math.cos(radian) + i[1]*math.sin(radian))+start[0], get_int(-i[0]*math.sin(radian) + i[1]*math.cos(radian))+start[1]) for i in element['points']]
-                #p = [QPoint((i[0]+start[0]), (i[1]+start[1])) for i in element['points']]
-                polygon = QPolygonF(p)
-                path.addPolygon(polygon)
-                painter.drawPath(path)
-
-            if element['name'] == 'trafficIsland':
-                points = []
-                polygon = []
-                angle = math.radians(element['direction'])
-                
-                # Right
-                points.append([get_int(element['start'][0] + road_width/4*math.sin(angle)), get_int(element['start'][1] + road_width/4*math.cos(angle))])
-                # -
-                points.append([get_int(points[-1][0] + element['curveAreaLength']*self.factor/2*math.cos(angle)), get_int(points[-1][1] - element['curveAreaLength']*self.factor/2*math.sin(angle))])
-                start_of_island = [get_int(points[-1][0] + element['curveAreaLength']*self.factor/2*math.cos(angle)), get_int(points[-1][1] - element['curveAreaLength']*self.factor/2*math.sin(angle))]
-                # \
-                points.append([get_int(start_of_island[0] + element['islandWidth']/2*self.factor*math.sin(angle)), get_int(start_of_island[1] + element['islandWidth']/2*self.factor*math.cos(angle))])
-                # -
-                points.append([get_int(points[-1][0] + element['zebraLength']*self.factor*math.cos(angle)), get_int(points[-1][1] - element['zebraLength']*self.factor*math.sin(angle))])
-                end_of_island = [get_int(points[-1][0] - element['islandWidth']/2*self.factor*math.sin(angle)), get_int(points[-1][1] - element['islandWidth']/2*self.factor*math.cos(angle))]
-                # /
-                points.append([get_int(end_of_island[0] + element['curveAreaLength']/2*self.factor*math.cos(angle)), get_int(end_of_island[1] - element['curveAreaLength']/2*self.factor*math.sin(angle))])
-                # -
-                points.append([get_int(points[-1][0] + element['curveAreaLength']*self.factor/2*math.cos(angle)), get_int(points[-1][1] - element['curveAreaLength']*self.factor/2*math.sin(angle))])
-                
-                p = [QPoint(i[0], i[1]) for i in points]
-                polygon.append(QPolygonF(p))
-                points.clear()
-                
-                # Left
-                points.append([get_int(element['start'][0] - road_width/4*math.sin(angle)), get_int(element['start'][1] - road_width/4*math.cos(angle))])
-                # -
-                points.append([get_int(points[-1][0] + element['curveAreaLength']*self.factor/2*math.cos(angle)), get_int(points[-1][1] - element['curveAreaLength']*self.factor/2*math.sin(angle))])
-                start_of_island = [get_int(points[-1][0] + element['curveAreaLength']*self.factor/2*math.cos(angle)), get_int(points[-1][1] - element['curveAreaLength']*self.factor/2*math.sin(angle))]
-                # /
-                points.append([get_int(start_of_island[0] - element['islandWidth']/2*self.factor*math.sin(angle)), get_int(start_of_island[1] - element['islandWidth']/2*self.factor*math.cos(angle))])
-                # -
-                points.append([get_int(points[-1][0] + element['zebraLength']*self.factor*math.cos(angle)), get_int(points[-1][1] - element['zebraLength']*self.factor*math.sin(angle))])
-                end_of_island = [get_int(points[-1][0] + element['islandWidth']/2*self.factor*math.sin(angle)), get_int(points[-1][1] + element['islandWidth']/2*self.factor*math.cos(angle))]
-                # \
-                points.append([get_int(end_of_island[0] + element['curveAreaLength']/2*self.factor*math.cos(angle)), get_int(end_of_island[1] - element['curveAreaLength']/2*self.factor*math.sin(angle))])
-                # -
-                points.append([get_int(points[-1][0] + element['curveAreaLength']*self.factor/2*math.cos(angle)), get_int(points[-1][1] - element['curveAreaLength']*self.factor/2*math.sin(angle))])
-                
-                p = [QPoint(i[0], i[1]) for i in points]
-                polygon.append(QPolygonF(p))
-                
-                painter.setPen(QPen(Qt.gray, road_width/2, cap=Qt.FlatCap))
-                path = QPainterPath()
-                for poly in polygon:
-                    path.addPolygon(poly)
-                    painter.drawPath(path)
-                painter.setPen(QPen(Qt.gray, road_width, cap=Qt.FlatCap))
-                    
-            if element['name'] == 'intersection':
-                points = []
-                angle = math.radians(element['direction'])
-                arm_length = get_int(element['length']/2*self.factor)
-                points.append([get_int(element['start'][0]+(arm_length*math.cos(angle))), get_int(element['start'][1]-(arm_length*math.sin(angle)))])
-                middle_point = points[-1]
-                # Back
-                points.append([get_int(middle_point[0]-(arm_length*math.cos(angle))), get_int(middle_point[1]+(arm_length*math.sin(angle)))])
-                points.append(middle_point)
-                # Left              
-                points.append([get_int(middle_point[0]-(arm_length*math.sin(angle))), get_int(middle_point[1]-(arm_length*math.cos(angle)))])
-                points.append(middle_point)
-                # Top
-                points.append([get_int(middle_point[0]+(arm_length*math.cos(angle))), get_int(middle_point[1]-(arm_length*math.sin(angle)))])
-                points.append(middle_point)
-                # Right
-                points.append([get_int(middle_point[0]+(arm_length*math.sin(angle))), get_int(middle_point[1]+(arm_length*math.cos(angle)))])
-                points.append(middle_point)
-                
-                p = [QPoint(i[0], i[1]) for i in points]
-                polygon = QPolygonF(p)
-                
-                path = QPainterPath()                
-                path.addPolygon(polygon)
-                painter.drawPath(path)
-            
-            if element['name'] == 'parkingArea':
-                start = element['start']
-                angle = math.radians(element['direction'])
-                
-                painter.drawLine(QLineF(element['start'][0], element['start'][1], element['end'][0], element['end'][1]))
-                painter.setPen(QPen(Qt.gray, 10, cap=Qt.FlatCap))
-                points = []
-                path = QPainterPath()
-                polygon = []
-
-                for dict in element['right']:
-                    spot_length = self.parking_spot_size[dict['type']][0]*self.factor
-                    spot_heigth = self.parking_spot_size[dict['type']][1]*self.factor
-                    points = []
-                    points.append([get_int(start[0] + ((dict['start']*self.factor+5)*math.cos(angle))), get_int(start[1] - ((dict['start']*self.factor+5)*math.sin(angle)))])
-                    # |
-                    points.append([get_int(points[-1][0] + (road_width/2*math.sin(angle))), get_int(points[-1][1] + (road_width/2*math.cos(angle)))])
-                    point = [get_int(points[-1][0] + (spot_heigth*math.cos(angle))), get_int(points[-1][1] - (spot_heigth*math.sin(angle)))]
-                    # \
-                    points.append([get_int(point[0] + (spot_heigth*math.sin(angle))), get_int(point[1] + (spot_heigth*math.cos(angle)))])
-                    # -
-                    points.append([get_int(points[-1][0] + (dict['number'] * spot_length*math.cos(angle))), get_int(points[-1][1] - (dict['number'] * spot_length*math.sin(angle)))])
-                    point = [get_int(points[-1][0] - (spot_heigth*math.sin(angle))), get_int(points[-1][1] - (spot_heigth*math.cos(angle)))]
-                    # /
-                    points.append([get_int(point[0] + (spot_heigth*math.cos(angle))), get_int(point[1] - (spot_heigth*math.sin(angle)))])
-                    # |
-                    points.append([get_int(points[-1][0] - (road_width/2*math.sin(angle))), get_int(points[-1][1] - (road_width/2*math.cos(angle)))])
-                    p = [QPoint(i[0], i[1]) for i in points]
-                    polygon.append(QPolygonF(p))
-                    
-                for dict in element['left']:
-                    spot_length = self.parking_spot_size[dict['type']][0]*self.factor
-                    spot_heigth = self.parking_spot_size[dict['type']][1]*self.factor
-                    points = []
-                    points.append([get_int(start[0] + ((dict['start']*self.factor+5)*math.cos(angle))), get_int(start[1] - ((dict['start']*self.factor+5)*math.sin(angle)))])
-                    # |
-                    points.append([get_int(points[-1][0] - (road_width/2*math.sin(angle))), get_int(points[-1][1] - (road_width/2*math.cos(angle)))])
-                    point = [get_int(points[-1][0] + (spot_heigth*math.cos(angle))), get_int(points[-1][1] - (spot_heigth*math.sin(angle)))]
-                    # /
-                    points.append([get_int(point[0] - (spot_heigth*math.sin(angle))), get_int(point[1] - (spot_heigth*math.cos(angle)))])
-                    # -
-                    points.append([get_int(points[-1][0] + (dict['number'] * spot_length*math.cos(angle))), get_int(points[-1][1] - (dict['number'] * spot_length*math.sin(angle)))])
-                    point = [get_int(points[-1][0] + (spot_heigth*math.sin(angle))), get_int(points[-1][1] + (spot_heigth*math.cos(angle)))]
-                    # \
-                    points.append([get_int(point[0] + (spot_heigth*math.cos(angle))), get_int(point[1] - (spot_heigth*math.sin(angle)))])
-                    # |
-                    points.append([get_int(points[-1][0] + (road_width/2*math.sin(angle))), get_int(points[-1][1] + (road_width/2*math.cos(angle)))])
-                    p = [QPoint(i[0], i[1]) for i in points]
-                    polygon.append(QPolygonF(p))
-                
-                for poly in polygon:
-                    path.addPolygon(poly)
-                    painter.drawPath(path)
-                        
-                painter.setPen(QPen(Qt.gray, road_width, cap=Qt.FlatCap))
-
-if __name__ == '__main__':
-    App = QApplication(sys.argv)
-    window = Window()
-    sys.exit(App.exec())
+    def load_svg(self, svg_path):
+        self.svg_widget = QSvgWidget(svg_path, self)
+        self.svg_widget.setFixedSize(2000, 2000)
+        self.scene.addWidget(self.svg_widget)
+'''
