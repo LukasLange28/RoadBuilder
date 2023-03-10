@@ -1,5 +1,6 @@
-import os
+import os, sys
 import shutil
+import time
 from PyQt5.QtWidgets import QWidget, QMessageBox, QShortcut, QGraphicsScene, QGraphicsView, QMainWindow
 from PyQt5.QtGui import QFont, QTransform, QKeySequence
 from PyQt5.QtSvg import QSvgWidget
@@ -7,9 +8,10 @@ from PyQt5 import QtCore
 
 from track_generator.generator import generate_track
 
+
 from xml_writer_reader import xml_writer
 from get_road_element_dict import get_int
-
+'''
 def xml_preview(parent_window):
     """
     Generate xml file.
@@ -28,10 +30,10 @@ def xml_preview(parent_window):
     except Exception as e:
         QMessageBox.about(parent_window, 'Error', f'Die Vorschau konnte nicht erstellt werden.\nFehlermeldung:\n{e}')
     shutil.rmtree(svg_path)
-
+'''
 
 class SvgWidget(QWidget):
-    def __init__(self, svg_path, parent_window):
+    def __init__(self, parent_window, svg_path = None):
         super().__init__()
 
         self.container_widget = QWidget()
@@ -44,11 +46,17 @@ class SvgWidget(QWidget):
 
         self.setWindowTitle('Vorschau')
         
-        svg_widget = QSvgWidget(svg_path, self)
-        height = get_int(svg_widget.sizeHint().height()/40)
-        width = get_int(svg_widget.sizeHint().width()/40)
+        self.svg_widget = QSvgWidget(self)
+        if svg_path:
+            self.load_svg(svg_path)
+    
+    def load_svg(self, svg_path):
+        self.svg_widget.load(svg_path)
+        height = get_int(self.svg_widget.sizeHint().height()/10)
+        width = get_int(self.svg_widget.sizeHint().width()/10)
 
-        svg_widget.resize(width, height)
+        self.svg_widget.resize(width, height)
+        self.setFixedSize(width, height)
 
     def wheelEvent(self, event):
         """
@@ -91,7 +99,8 @@ class SvgWidget(QWidget):
         self.mouse_pos = event.localPos()
         self.parent_window.move_window.setX(self.parent_window.move_window.x() - (self.cursor_start - self.container_widget.cursor().pos()).x())
         self.parent_window.move_window.setY(self.parent_window.move_window.y() - (self.cursor_start - self.container_widget.cursor().pos()).y())
- 
+
+'''
 class PreviewWindow(QMainWindow):
     
     factor = 1.5
@@ -104,7 +113,7 @@ class PreviewWindow(QMainWindow):
         self.view = QGraphicsView(self.scene)
 
 
-        self.svg_widget = SvgWidget(svg_path, self)
+        self.svg_widget = SvgWidget(self, svg_path)
         self.svg_widget.setFixedSize(2000, 2000)
         self.scene.addWidget(self.svg_widget)
 
@@ -120,7 +129,7 @@ class PreviewWindow(QMainWindow):
         Is called from mouse wheel or plus button
         """
         scale_tr = QTransform()
-        scale_tr.scale(self.factor, self.factor)
+        scale_tr.scale(1.5, 1.5)
         tr = self.view.transform() * scale_tr
         self.view.setTransform(tr)
 
@@ -130,9 +139,9 @@ class PreviewWindow(QMainWindow):
         Is called from mouse wheel os minus button
         """
         scale_tr = QTransform()
-        scale_tr.scale(self.factor, self.factor)
+        scale_tr.scale(1.5, 1.5)
         scale_inverted, invertible = scale_tr.inverted()
         if invertible:
             tr = self.view.transform() * scale_inverted
             self.view.setTransform(tr)
-    
+'''
