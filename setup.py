@@ -14,7 +14,7 @@ setup(
     description=("Road builder"),
     license="GPL 3.0",
     keywords="xml vehicles track interface",
-    url="https://github.com/LukasLange28/RoadBuilder/",
+    url="https://github.com/LukasLange28/RoadBuilder",
     packages=find_packages(),
     include_package_data=True,
     long_description=read('README.md'),

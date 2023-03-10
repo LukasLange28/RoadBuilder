@@ -8,8 +8,9 @@ from PyQt5.QtGui import QPainter, QPen, QFont, QPainterPath, QPolygonF, QTransfo
 from PyQt5.QtCore import Qt, QPoint, QLineF
 from PyQt5.QtSvg import QSvgWidget
 
-if  not '/home/id305564/Schreibtisch/U/track_generator' in sys.path:
-    sys.path.append('/home/id305564/Schreibtisch/U/track_generator')
+# Development: insert python search path to use your own track_generator version
+#if  not '/home/id305564/Schreibtisch/U/track_generator' in sys.path:
+#    sys.path.append('/home/id305564/Schreibtisch/U/track_generator')
 
 import clothoids_window, parking_area, traffic_island, intersection, select_line_style
 from get_road_element_dict import *
@@ -23,7 +24,6 @@ class MainWindow(QMainWindow):
     def __init__(self):
         
         super().__init__()       
-
         self.move_window = QPoint(0,0)
         
         # Road position
@@ -210,7 +210,6 @@ class MainWindow(QMainWindow):
         self.update_svg()
         self.showMaximized()
         
-    
     def resizeEvent(self, event):
         """
         Is called when the mainwindow gets resized.
@@ -274,6 +273,7 @@ class MainWindow(QMainWindow):
             return       
         try:
             python_reader(file, self)
+            self.update_svg()
         except Exception as e:
             QMessageBox.about(self, 'Error', f'Die Strecke konnte nicht geladen werden.\nFehlermeldung:\n{e}')
 
@@ -305,15 +305,9 @@ class MainWindow(QMainWindow):
             return       
         try:
             xml_reader(file, self)
-            #self.paint_road.update()
+            self.update_svg()
         except Exception as e:
             QMessageBox.about(self, 'Error', f'Die Strecke konnte nicht geladen werden.\nFehlermeldung:\n{e}')
-    
-    #def xml_preview_button_clicked(self):
-    #    if not len(self.road) > 1:
-    #        QMessageBox.about(self, 'Warning', 'Es ist keine Strecke vorhanden!')
-    #        return
-    #    xml_preview(self)
     
     def line_button_clicked(self):
         """
@@ -454,7 +448,7 @@ class MainWindow(QMainWindow):
         elif name == 'intersection':
             self.list_widget.addItem('Kreuzung')
             
-    def append_road_element(self, road_element):
+    def append_road_element(self, road_element, skip_svg=False):
         """
         Append an element to self.road
         """
@@ -470,7 +464,8 @@ class MainWindow(QMainWindow):
         self.road.append(road_element)
         self.update_coordinates()
         self.insert_list_name(road_element['name'])
-        self.update_svg()
+        if not skip_svg:
+            self.update_svg()
     
     def update_svg(self):
         """
@@ -529,65 +524,4 @@ class MainWindow(QMainWindow):
         if invertible:
             tr = self.view.transform() * scale_inverted
             self.view.setTransform(tr)
-'''
-class PaintRoad(QWidget):
-    def __init__(self, road, move_window, factor, parking_spot_size, parent_window):
-        super().__init__()
-        self.road = road
-        self.move_window = move_window
-        self.factor = factor
-        self.parking_spot_size = parking_spot_size
-        self.parent_window = parent_window
 
-        self.container_widget = QWidget()
-
-        self.mouse_pos = QPoint(0, 0)
-        self.cursor_start = QPoint(0, 0)
-        
-    def wheelEvent(self, event):
-        """
-        Is called if mouse wheel is used
-        """
-        delta = event.angleDelta().y()
-        if delta > 0:
-            self.parent_window.zoom_in()
-
-        elif delta < 0:
-            self.parent_window.zoom_out()
-    
-    def mousePressEvent(self, event):
-        """
-        Is calles if left mouse button is clicked
-        """
-        self.cursor_start = self.container_widget.cursor().pos()
-        print(self.cursor_start)
-        if event.button() == Qt.LeftButton:
-            self.setCursor(Qt.ClosedHandCursor)
-
-    def mouseMoveEvent(self, event):
-        """
-        Is calles if left mouse button is clicked and mouse moves
-        """
-        delta = self.cursor_start - self.container_widget.cursor().pos()
-        
-        # panning area
-        if event.buttons() == Qt.LeftButton:
-
-            self.move(self.parent_window.move_window.x() - delta.x(), self.parent_window.move_window.y() - delta.y())
-
-        self.mouse_pos = event.localPos()
-
-    def mouseReleaseEvent(self, event):
-        """
-        Is calles if left mouse button is released
-        """
-        self.unsetCursor()
-        self.mouse_pos = event.localPos()
-        self.parent_window.move_window.setX(self.parent_window.move_window.x() - (self.cursor_start - self.container_widget.cursor().pos()).x())
-        self.parent_window.move_window.setY(self.parent_window.move_window.y() - (self.cursor_start - self.container_widget.cursor().pos()).y())
-
-    def load_svg(self, svg_path):
-        self.svg_widget = QSvgWidget(svg_path, self)
-        self.svg_widget.setFixedSize(2000, 2000)
-        self.scene.addWidget(self.svg_widget)
-'''

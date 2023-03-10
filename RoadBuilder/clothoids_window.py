@@ -22,11 +22,8 @@ class ClothoidWindow(QMainWindow):
         
         self.parent_window =parent_window
         self.factor = parent_window.factor
-        
         self.road = parent_window.road
-
         self.dict = {'a': 0, 'angle': 0, 'points': [], 'end': [0,0]}
-
         self.move_window = QPoint(-10000,-10000)
         self.start = [10000, 10000]
 
@@ -146,6 +143,12 @@ class ClothoidWindow(QMainWindow):
         form_two_radii.addRow(QLabel('Winkel:'), self.arc_length_two_radii)
         form_two_radii.addRow(QLabel('Richtung:'), self.direction_two_radii)
         form_two_radii.setVerticalSpacing(0)
+
+        # Label for warnings
+        self.warning_label = QLabel(self)
+        self.warning_label.setFixedWidth(600)
+        self.warning_label.setStyleSheet('color: red')
+        self.warning_label.move(300,0)
         
         # Box with tabs
         self.tabs = QTabWidget(self)
@@ -174,12 +177,6 @@ class ClothoidWindow(QMainWindow):
         finish_button.clicked.connect(self.finish_button_clicked)
         finish_button.move(0, 210)
         finish_button.setFixedWidth(260)
-
-        # Label for warnings
-        self.warning_label = QLabel(self)
-        self.warning_label.setFixedWidth(600)
-        self.warning_label.setStyleSheet('color: red')
-        self.warning_label.move(300,0)
 
         self.update_a_clothoid()
 

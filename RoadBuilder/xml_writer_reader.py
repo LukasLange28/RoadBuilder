@@ -148,18 +148,18 @@ def xml_reader(file_name, parent_window):
             dict = get_parking_area_dict(parent_window.road[-1]['end'], parent_window.road[-1]['endDirection'], length, right, left, parent_window.factor)
         elif element.tag == 'Clothoid':
             a = float(element.get('a'))
+            direction = 1 if element.get('direction') == 'right' else -1
             angle = float(element.get('angle'))
             angle_offset = float(element.get('angle_offset'))
             type = element.get('type')
-            direction = 1 if element.get('direction') == 'right' else -1
             end = get_clothoid(a, angle, angle_offset, direction, type)[-1]
-            dict = get_clothoid_dict(parent_window.road[-1]['end'], parent_window.road[-1]['endDirection'], a, angle, angle_offset, type, end, element.get('direction'))
+            dict = get_clothoid_dict(parent_window.road[-1]['end'], parent_window.road[-1]['endDirection'], a, angle * direction * -1, angle_offset, type, end, element.get('direction'))
 
         # Road line are not given in the xml file
         dict['leftLine'] = 'solid'
         dict['middleLine'] = 'dashed'
         dict['rightLine'] = 'solid'
 
-        parent_window.append_road_element(dict)
+        parent_window.append_road_element(dict, True)
     parent_window.reconnect_road()
     

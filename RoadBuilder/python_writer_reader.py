@@ -269,7 +269,7 @@ def python_reader(file_name, parent_window):
         dict['middleLine'] = element.middle_line_marking
         dict['rightLine'] = element.right_line_marking
 
-        parent_window.append_road_element(dict)
+        parent_window.append_road_element(dict, True)
 
     # remove syspath if appended
     if delete_sys_path:
