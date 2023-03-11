@@ -17,7 +17,7 @@ if [[ `git status -s | wc -l` -ne 0 ]]; then
 fi
 
 if [[ `git branch --show-current` != "main" ]]; then
-	echo ERROR: Current branch is not main, please checkout master
+	echo ERROR: Current branch is not main, please checkout main
 	exit -3
 fi
 
@@ -42,8 +42,8 @@ VERSION_TAG=v$NEW_VERSION
 echo "Creating tag \"$VERSION_TAG\""
 git tag $VERSION_TAG
 
-echo "Pushing master branch and tag to origin"
-git push origin master $VERSION_TAG
+echo "Pushing main branch and tag to origin"
+git push origin main $VERSION_TAG
 
 echo "Build package and push to PyPi"
 source venv/bin/activate.bash
