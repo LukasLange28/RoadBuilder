@@ -16,8 +16,8 @@ if [[ `git status -s | wc -l` -ne 0 ]]; then
 	exit -2
 fi
 
-if [[ `git branch --show-current` != "master" ]]; then
-	echo ERROR: Current branch is not master, please checkout master
+if [[ `git branch --show-current` != "main" ]]; then
+	echo ERROR: Current branch is not main, please checkout master
 	exit -3
 fi
 
