@@ -47,5 +47,5 @@ git push origin main $VERSION_TAG
 
 echo "Build package and push to PyPi"
 source venv/bin/activate.bash
-python setup.py sdist bdist_wheel
-python -m twine upload dist/*
+python3 setup.py sdist bdist_wheel
+python3 -m twine upload dist/*
