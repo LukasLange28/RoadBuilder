@@ -6,30 +6,7 @@ from PyQt5.QtGui import QFont, QTransform, QKeySequence
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5 import QtCore
 
-from track_generator.generator import generate_track
-
-from RoadBuilder.xml_writer_reader import xml_writer
 from RoadBuilder.get_road_element_dict import get_int
-'''
-def xml_preview(parent_window):
-    """
-    Generate xml file.
-    Generate svg file with track generator.
-    Open window with svg file.
-    Delete the generated files.
-    """
-    os.makedirs(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp'))
-    xml_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp', 'temp.xml')
-    svg_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
-    try:
-        xml_writer(parent_window.road, xml_path, parent_window.factor)
-        generate_track([xml_path], svg_path, False, False)
-        parent_window.preview_window = PreviewWindow(os.path.join(svg_path, 'temp', 'temp.svg'))
-        parent_window.preview_window.show()
-    except Exception as e:
-        QMessageBox.about(parent_window, 'Error', f'Die Vorschau konnte nicht erstellt werden.\nFehlermeldung:\n{e}')
-    shutil.rmtree(svg_path)
-'''
 
 class SvgWidget(QWidget):
     def __init__(self, parent_window, svg_path = None):

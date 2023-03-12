@@ -1,4 +1,3 @@
-from clothoids_window import ClothoidWindow
 from xml.etree import cElementTree as ET, ElementTree
 from xml.etree import ElementTree
 from xml.dom import minidom

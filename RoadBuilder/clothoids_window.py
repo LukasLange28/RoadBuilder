@@ -1,9 +1,9 @@
 import math
 
-from PyQt5 import QtGui, QtWidgets, QtCore
-from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QLineEdit, QComboBox, QFormLayout, QGroupBox, QShortcut, QGraphicsScene, QGraphicsView, QMainWindow, QTabWidget
+from PyQt5 import QtGui, QtCore
+from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QLineEdit, QComboBox, QFormLayout, QShortcut, QGraphicsScene, QGraphicsView, QMainWindow, QTabWidget
 from PyQt5.QtGui import QPainter, QPen, QFont, QPainterPath, QPolygonF, QTransform, QKeySequence
-from PyQt5.QtCore import Qt, QPoint, QLineF
+from PyQt5.QtCore import Qt, QPoint
 
 from RoadBuilder.get_road_element_dict import get_clothoid_dict, get_int, get_faculty, move_point, rotate_point
 

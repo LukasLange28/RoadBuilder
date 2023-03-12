@@ -1,18 +1,17 @@
 import sys, os
-import math
 import shutil
 
 from PyQt5 import QtGui, QtWidgets, QtCore
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QLineEdit, QMessageBox, QFileDialog, QFormLayout, QGroupBox, QShortcut, QWidget
-from PyQt5.QtGui import QPainter, QPen, QFont, QPainterPath, QPolygonF, QTransform, QKeySequence
-from PyQt5.QtCore import Qt, QPoint, QLineF
-from PyQt5.QtSvg import QSvgWidget
+from PyQt5.QtWidgets import QMainWindow, QPushButton, QLabel, QLineEdit, QMessageBox, QFileDialog, QFormLayout, QGroupBox, QShortcut
+from PyQt5.QtGui import QFont, QTransform, QKeySequence
+from PyQt5.QtCore import QPoint
+#from PyQt5.QtSvg import QSvgWidget
 
 # Development: insert python search path to use your own track_generator version
-#if  not '/home/id305564/Schreibtisch/U/track_generator' in sys.path:
-#    sys.path.append('/home/id305564/Schreibtisch/U/track_generator')
+if  not '/home/id305564/Schreibtisch/U/track_generator' in sys.path:
+    sys.path.append('/home/id305564/Schreibtisch/U/track_generator')
 
-import clothoids_window, parking_area, traffic_island, intersection, select_line_style
+from RoadBuilder import clothoids_window, parking_area, traffic_island, intersection, select_line_style
 from RoadBuilder.get_road_element_dict import *
 from RoadBuilder.python_writer_reader import python_reader, python_writer
 from RoadBuilder.xml_writer_reader import xml_writer, xml_reader
