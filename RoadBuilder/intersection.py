@@ -2,7 +2,7 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLineEdit, QComboBox
 from PyQt5.QtGui import QFont
 
-from get_road_element_dict import get_intersection_dict
+from RoadBuilder.get_road_element_dict import get_intersection_dict
 
 class IntersectionWindow(QWidget):
     def __init__(self, parent_window):

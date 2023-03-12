@@ -4,7 +4,7 @@ import shutil
 import math
 import importlib
 
-from get_road_element_dict import *
+from RoadBuilder.get_road_element_dict import *
 
 def python_writer(road, file_name, close_loop):
     """

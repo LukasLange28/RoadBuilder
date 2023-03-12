@@ -8,9 +8,8 @@ from PyQt5 import QtCore
 
 from track_generator.generator import generate_track
 
-
-from xml_writer_reader import xml_writer
-from get_road_element_dict import get_int
+from RoadBuilder.xml_writer_reader import xml_writer
+from RoadBuilder.get_road_element_dict import get_int
 '''
 def xml_preview(parent_window):
     """

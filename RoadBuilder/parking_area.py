@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QLineEdit
 from PyQt5.QtGui import QPainter, QPen, QFont, QPainterPath, QPolygonF
 from PyQt5.QtCore import Qt, QPoint, QLineF
 
-from get_road_element_dict import get_parking_area_dict, get_int
+from RoadBuilder.get_road_element_dict import get_parking_area_dict, get_int
 
 class ParkingAreaWindow(QWidget):
     

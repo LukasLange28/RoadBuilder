@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QLineEdit
 from PyQt5.QtGui import QPainter, QPen, QFont, QPainterPath, QPolygonF, QTransform, QKeySequence
 from PyQt5.QtCore import Qt, QPoint, QLineF
 
-from get_road_element_dict import get_clothoid_dict, get_int, get_faculty, move_point, rotate_point
+from RoadBuilder.get_road_element_dict import get_clothoid_dict, get_int, get_faculty, move_point, rotate_point
 
 class ClothoidWindow(QMainWindow):
     

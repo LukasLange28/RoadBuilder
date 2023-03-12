@@ -2,7 +2,7 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QLineEdit, QFormLayout, QGroupBox
 from PyQt5.QtGui import QFont
 
-from get_road_element_dict import get_traffic_island_dict
+from RoadBuilder.get_road_element_dict import get_traffic_island_dict
 
 class TrafficIslandWindow(QWidget):
     def __init__(self, parent_window):

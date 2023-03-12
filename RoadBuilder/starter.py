@@ -2,7 +2,7 @@ import sys
 
 from PyQt5.QtWidgets import QApplication
 
-from build_road_gui import MainWindow
+from RoadBuilder.build_road_gui import MainWindow
 
 def start():
     App = QApplication(sys.argv)

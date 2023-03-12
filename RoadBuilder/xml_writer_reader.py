@@ -3,8 +3,8 @@ from xml.etree import cElementTree as ET, ElementTree
 from xml.etree import ElementTree
 from xml.dom import minidom
 
-from get_road_element_dict import *
-from clothoids_window import get_clothoid
+from RoadBuilder.get_road_element_dict import *
+from RoadBuilder.clothoids_window import get_clothoid
 
 def xml_writer(road, file_name, factor):
     """

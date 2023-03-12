@@ -13,10 +13,10 @@ from PyQt5.QtSvg import QSvgWidget
 #    sys.path.append('/home/id305564/Schreibtisch/U/track_generator')
 
 import clothoids_window, parking_area, traffic_island, intersection, select_line_style
-from get_road_element_dict import *
-from python_writer_reader import python_reader, python_writer
-from xml_writer_reader import xml_writer, xml_reader
-from preview_window import SvgWidget
+from RoadBuilder.get_road_element_dict import *
+from RoadBuilder.python_writer_reader import python_reader, python_writer
+from RoadBuilder.xml_writer_reader import xml_writer, xml_reader
+from RoadBuilder.preview_window import SvgWidget
 from track_generator.generator import generate_track
 
 class MainWindow(QMainWindow):
