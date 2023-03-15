@@ -228,6 +228,7 @@ class ClothoidWindow(QMainWindow):
         Update the clothoid with the "a" parameters
         """
         if self.arc_length_a.text() and self.a.text():
+            # Dictionary for the cothoid
             dict ={}
             dict['a'] = int(self.a.text())
             dict['angle_offset'] = 0
@@ -249,6 +250,7 @@ class ClothoidWindow(QMainWindow):
         Update the clothoid with the "end radius" parameters
         """
         if self.arc_length_end_radius.text() and self.end_radius.text():
+            # Dictionary for the cothoid
             dict ={}
             dict['angle_offset'] = 0
             dict['type'] = 'opend' if self.type_end_radius.currentText() == 'Öffnend' else 'closing'
@@ -276,9 +278,11 @@ class ClothoidWindow(QMainWindow):
             start_radius = float(self.first_radius.text())
             end_radius = float(self.second_radius.text())
             if end_radius/start_radius >= 0.8 and end_radius/start_radius <= 1.2:
+                # This proportion would cause bugs
                 self.warning_label.setText('Das Verhälnis Endradius/Anfangsradius muss kleiner 0.9 oder größer 1.2 sein')
                 return
             self.warning_label.setText('')
+            # Dictionary for the cothoid
             dict ={}
             dict['localDirection'] = 'right' if self.direction_two_radii.currentText() == 'Rechts' else 'left'
             direction = 1 if dict['localDirection'] == 'right' else -1
@@ -318,7 +322,9 @@ def get_clothoid(a, angle, angle_offset, direction, type):
     points = []
     arc_length_start = a*math.sqrt(2*math.radians(angle_offset))
     arc_length_end = a*math.sqrt(2*math.radians(angle_offset + angle))
+    # Distance between the points
     distance = 0.04
+    # l is the length of the clothoid path
     l = [i*distance for i in range(get_int(arc_length_start/distance), get_int(arc_length_end/distance)+1)]
     for i in l:
         points.append(get_clothoid_point(a, i, direction))
@@ -326,6 +332,7 @@ def get_clothoid(a, angle, angle_offset, direction, type):
     for i, point in enumerate(points):
         points[i] = rotate_point(move_point(point, move), math.radians(angle_offset)*direction)
     if type == 'opend':
+        # tansform the clothoid to a opend clothoid
         points = get_inverted_points(points, math.radians(angle)*direction)
     return points
 

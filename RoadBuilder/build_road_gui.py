@@ -5,11 +5,10 @@ from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtWidgets import QMainWindow, QPushButton, QLabel, QLineEdit, QMessageBox, QFileDialog, QFormLayout, QGroupBox, QShortcut
 from PyQt5.QtGui import QFont, QTransform, QKeySequence
 from PyQt5.QtCore import QPoint
-#from PyQt5.QtSvg import QSvgWidget
 
 # Development: insert python search path to use your own track_generator version
-if  not '/home/id305564/Schreibtisch/U/track_generator' in sys.path:
-    sys.path.append('/home/id305564/Schreibtisch/U/track_generator')
+#if  not '/home/id305564/Schreibtisch/track_generator' in sys.path:
+#    sys.path.append('/home/id305564/Schreibtisch/track_generator')
 
 from RoadBuilder import clothoids_window, parking_area, traffic_island, intersection, select_line_style
 from RoadBuilder.get_road_element_dict import *
@@ -299,7 +298,7 @@ class MainWindow(QMainWindow):
         Asks the user for a xml file.
         Trys to call the function xml_reader.
         """
-        file, _ = QFileDialog.getOpenFileName(self, 'Wählen Sie die Datei aus.','/opt/.ros/kitcar-gazebo-simulation/simulation/models/env_db','XML Files (*.xml)')
+        file, _ = QFileDialog.getOpenFileName(self, 'Wählen Sie die Datei aus.','','XML Files (*.xml)')
         if file == '':
             return       
         try:
@@ -477,11 +476,15 @@ class MainWindow(QMainWindow):
         xml_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp', 'temp.xml')
         svg_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
         try:
+            # generate xml file
             xml_writer(self.road, xml_path, self.factor)
+            # generate svg file
             generate_track([xml_path], svg_path, False, False)
+            # load svg file
             self.svg_widget.load_svg(os.path.join(svg_path, 'temp', 'temp.svg'))
         except Exception as e:
             QMessageBox.about(self, 'Error', f'Die Vorschau konnte nicht erstellt werden.\nFehlermeldung:\n{e}')
+        # delete the temp directory
         shutil.rmtree(svg_path)
     
     def update_coordinates(self):
