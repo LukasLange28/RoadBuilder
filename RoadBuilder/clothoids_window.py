@@ -149,6 +149,11 @@ class ClothoidWindow(QMainWindow):
         self.warning_label.setFixedWidth(600)
         self.warning_label.setStyleSheet('color: red')
         self.warning_label.move(300,0)
+
+        # Label for coordinates
+        self.end_label = QLabel(f'End Koordinate: x: {self.dict["end"][0]/self.factor}, y: {self.dict["end"][1]/self.factor}', self)
+        self.end_label.move(0, 180)
+        self.end_label.setFixedWidth(260)
         
         # Box with tabs
         self.tabs = QTabWidget(self)
@@ -167,11 +172,6 @@ class ClothoidWindow(QMainWindow):
         self.tab_a.setLayout(form_a)
         self.tab_end_radius.setLayout(form_end_radius)
         self.tab_two_radii.setLayout(form_two_radii)
-
-        # Label for coordinates
-        self.end_label = QLabel(f'End Koordinate: x: {self.dict["end"][0]/self.factor}, y: {self.dict["end"][1]/self.factor}', self)
-        self.end_label.move(0, 180)
-        self.end_label.setFixedWidth(260)
 
         finish_button = QPushButton('Fertig',self)
         finish_button.clicked.connect(self.finish_button_clicked)
